@@ -33,7 +33,7 @@ def summarize_news(content):
     """뉴스에서 핵심 문장 추출"""
     prompt = f"Summarize the following news article in one key sentence:\n\n{content}"
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[{"role": "system", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
