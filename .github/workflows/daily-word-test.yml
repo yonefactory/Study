@@ -1,16 +1,18 @@
 name: Daily English Learning Bot (Test Mode)
 
 on:
-  push:  # 코드가 main 브랜치에 푸시될 때 실행
+  push:
     branches:
       - main
   workflow_dispatch:  # 수동 실행 버튼 추가
   schedule:
-    - cron: '0 7 * * *'  # 매일 오전 7시 (UTC 기준, 한국 시간 16시) 실행
+    - cron: '0 7 * * *'  # 매일 오전 7시 실행 (UTC 기준, 한국 시간 16시)
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
