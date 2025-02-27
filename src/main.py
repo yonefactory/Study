@@ -7,6 +7,9 @@ from config import OPENAI_API_KEY, NEWS_URL
 
 nlp = spacy.load("en_core_web_sm")
 
+# OpenAI 최신 API 사용을 위해 client 생성
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 def get_latest_news():
     """미국 뉴스 사이트에서 최신 기사 가져오기"""
     response = requests.get(NEWS_URL)
@@ -29,11 +32,11 @@ def get_latest_news():
 def summarize_news(content):
     """뉴스에서 핵심 문장 추출"""
     prompt = f"Summarize the following news article in one key sentence:\n\n{content}"
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "system", "content": prompt}]
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content.strip()
 
 def extract_keywords(sentence):
     """핵심 문장에서 중요한 단어 추출"""
@@ -44,11 +47,11 @@ def extract_keywords(sentence):
 def define_word(word):
     """단어 정의 및 예문 생성"""
     prompt = f"Explain the word '{word}' in simple English and provide an example sentence."
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "system", "content": prompt}]
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content.strip()
 
 # 실행
 news_title, news_content = get_latest_news()
