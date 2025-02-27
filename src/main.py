@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import openai
 import spacy
+import time
 from telegram_bot import send_telegram_message
 from config import OPENAI_API_KEY, NEWS_URL
 
@@ -9,6 +10,20 @@ nlp = spacy.load("en_core_web_sm")
 
 # OpenAI 최신 API 사용을 위해 client 생성
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+def request_with_retry(prompt, model="gpt-3.5-turbo", retries=3, delay=5):
+    """OpenAI API 요청 시 Rate Limit 오류 발생 시 자동 재시도"""
+    for i in range(retries):
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "system", "content": prompt}]
+            )
+            return response.choices[0].message.content.strip()
+        except openai.RateLimitError:
+            print(f"⚠️ API Rate Limit Error. {delay}초 후 재시도 ({i+1}/{retries})...")
+            time.sleep(delay)  # 재시도 전 대기
+    raise Exception("🚨 API 요청 실패: Rate Limit 초과")
 
 def get_latest_news():
     """미국 뉴스 사이트에서 최신 기사 가져오기"""
@@ -32,11 +47,7 @@ def get_latest_news():
 def summarize_news(content):
     """뉴스에서 핵심 문장 추출"""
     prompt = f"Summarize the following news article in one key sentence:\n\n{content}"
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "system", "content": prompt}]
-    )
-    return response.choices[0].message.content.strip()
+    return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def extract_keywords(sentence):
     """핵심 문장에서 중요한 단어 추출"""
@@ -47,11 +58,7 @@ def extract_keywords(sentence):
 def define_word(word):
     """단어 정의 및 예문 생성"""
     prompt = f"Explain the word '{word}' in simple English and provide an example sentence."
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "system", "content": prompt}]
-    )
-    return response.choices[0].message.content.strip()
+    return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 # 실행
 news_title, news_content = get_latest_news()
