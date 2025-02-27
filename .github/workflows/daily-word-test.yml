@@ -23,5 +23,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Download spaCy model  # 🟢 spaCy 모델 다운로드 추가
+        run: python -m spacy download en_core_web_sm
+
       - name: Run script (Test Mode)
         run: python src/main.py
