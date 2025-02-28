@@ -46,14 +46,14 @@ def get_latest_news():
 
 def extract_core_sentences(content):
     """뉴스에서 중요한 첫 3문장 + 마지막 1문장만 선택하여 압축"""
-    sentences = content.split(". ")  # 문장을 분리
+    sentences = content.split(". ")  
     if len(sentences) > 4:
-        return ". ".join(sentences[:3] + [sentences[-1]])  # 앞 3문장 + 마지막 문장만 선택
-    return content  # 문장이 4개 이하라면 원문 유지
+        return ". ".join(sentences[:3] + [sentences[-1]])  
+    return content  
 
 def summarize_news(content):
     """뉴스 핵심 문장만 GPT에 전달하여 요약 (토큰 절약)"""
-    compressed_content = extract_core_sentences(content)  # 텍스트 압축
+    compressed_content = extract_core_sentences(content)  
     prompt = "Summarize the following key sentences in one concise sentence:\n\n" + compressed_content
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
@@ -87,33 +87,36 @@ def select_important_terms(terms):
     prompt += "\n\nReturn only the two selected expressions in a comma-separated format."
 
     selected_terms = request_with_retry(prompt, model="gpt-3.5-turbo")
-    return selected_terms.split(", ")  # 중요 단어 2개 반환
+    return selected_terms.split(", ")
 
 def generate_quiz(phrase):
     """GPT를 활용해 빈칸 채우기 퀴즈 생성"""
-    prompt = f"Create a fill-in-the-blank quiz using the phrase '{phrase}'. The sentence should be natural and have a missing word for the learner to guess."
+    prompt = f"Create a fill-in-the-blank quiz using the phrase '{phrase}'."
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def generate_conversation(phrase):
     """GPT를 활용해 해당 표현을 포함한 짧은 대화 예제 생성"""
-    prompt = f"Create a short dialogue using the phrase '{phrase}' in a natural conversation."
+    prompt = f"Create a short dialogue using the phrase '{phrase}'."
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 # 실행
 news_title, news_content = get_latest_news()
 summary_sentence = summarize_news(news_content)
 summary_sentence_ko = translate_text(summary_sentence, target_language="ko")
-important_terms = extract_keywords(summary_sentence)  # 핵심 단어 & 표현 추출
-expressions = generate_expressions().split("\n")  # 추가적인 영어 표현 생성
-all_terms = important_terms + expressions  # 전체 학습 대상 리스트
+important_terms = extract_keywords(summary_sentence)
+expressions = generate_expressions().split("\n")
+all_terms = important_terms + expressions
 
-# 📌 가장 중요한 단어 & 표현 2개 선정
-selected_morning_phrase, selected_afternoon_phrase = select_important_terms(all_terms)
+selected_terms = select_important_terms(all_terms)
+selected_morning_phrase = selected_terms[0].strip()
+selected_afternoon_phrase = selected_terms[1].strip()
 
-# 한국어 번역 포함한 정의 생성
+if selected_morning_phrase not in all_terms:
+    selected_morning_phrase = all_terms[0]
+if selected_afternoon_phrase not in all_terms:
+    selected_afternoon_phrase = all_terms[1]
+
 term_definitions = define_terms(all_terms)
-
-# 아침 학습 (빈칸 채우기 퀴즈) & 오후 학습 (대화 예문) 추가
 morning_quiz = generate_quiz(selected_morning_phrase)
 afternoon_conversation = generate_conversation(selected_afternoon_phrase)
 
@@ -126,19 +129,15 @@ full_message = (
     + summary_sentence + "\n📌 " + summary_sentence_ko + "\n\n"
     "🔎 *오늘의 단어 및 표현:*\n" + term_definitions + "\n\n"
     "---\n\n"
-    
     "🌅 *아침 학습 표현:* " + selected_morning_phrase + "\n"
     "📝 *설명:* " + term_definitions.split("\n")[all_terms.index(selected_morning_phrase)] + "\n"
     "❓ *빈칸 채우기 퀴즈:*\n" + morning_quiz + "\n"
     "✏️ *빈칸에 알맞은 단어를 채워보세요!*\n\n"
     "---\n\n"
-    
     "🌇 *오후 학습 표현:* " + selected_afternoon_phrase + "\n"
-    "📝 *설명:* " + term_definitions.split("\n")[all_terms.index(selected_afternoon_phrase)] + "\n"
     "💬 *대화 속에서 배우기:*\n" + afternoon_conversation + "\n"
     "📝 *이 표현을 포함한 자신만의 대화를 만들어보세요!*\n\n"
     "---\n\n"
-    
     "🌙 *저녁 복습 시간*\n"
     "💬 *오늘 배운 핵심 문장:* " + summary_sentence + "\n"
     "📌 " + summary_sentence_ko + "\n"
