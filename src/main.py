@@ -54,12 +54,12 @@ def extract_core_sentences(content):
 def summarize_news(content):
     """뉴스 핵심 문장만 GPT에 전달하여 요약 (토큰 절약)"""
     compressed_content = extract_core_sentences(content)  # 텍스트 압축
-    prompt = f"Summarize the following key sentences in one concise sentence:\n\n{compressed_content}"
+    prompt = f"Summarize the following key sentences in one concise sentence:\\n\\n{compressed_content}"
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def translate_text(text, target_language="ko"):
     """GPT를 사용해 텍스트 번역"""
-    prompt = f"Translate the following text to {target_language}:\n\n{text}"
+    prompt = f"Translate the following text to {target_language}:\\n\\n{text}"
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def extract_keywords(sentence):
@@ -75,9 +75,9 @@ def generate_expressions():
 
 def define_terms(terms):
     """3개의 단어 또는 표현을 한 번의 요청으로 정의 (영어 설명 + 한국어 번역)"""
-    prompt = f"Explain the following words or expressions in English and translate their meaning into Korean:\n\n"
+    prompt = f"Explain the following words or expressions in English and translate their meaning into Korean:\\n\\n"
     for term in terms:
-        prompt += f"- {term}\n"
+        prompt += f"- {term}\\n"
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 # 실행
@@ -85,7 +85,7 @@ news_title, news_content = get_latest_news()
 summary_sentence = summarize_news(news_content)
 summary_sentence_ko = translate_text(summary_sentence, target_language="ko")
 important_terms = extract_keywords(summary_sentence)  # 단어 + 표현 포함
-expressions = generate_expressions().split("\n")  # 새로운 표현 추가
+expressions = generate_expressions().split("\\n")  # 새로운 표현 추가
 all_terms = important_terms + expressions  # 전체 학습 대상
 
 # 한국어 번역 포함한 정의 생성
@@ -109,13 +109,13 @@ full_message = f"""
 ---
 
 🔹 *Morning Phrase:* {all_terms[0]}
-📝 *Definition:* {term_definitions.split('\n')[0]}
+📝 *Definition:* {term_definitions.split('\\n')[0]}
 💡 Try using this phrase in a sentence today!
 
 ---
 
 🔹 *Afternoon Phrase:* {all_terms[1]}
-📝 *Definition:* {term_definitions.split('\n')[1]}
+📝 *Definition:* {term_definitions.split('\\n')[1]}
 💡 Challenge: Use this phrase in a short paragraph!
 
 ---
