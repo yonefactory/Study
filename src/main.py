@@ -80,43 +80,81 @@ def define_terms(terms):
         prompt += "- " + term + "\n"
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
+def select_important_terms(terms):
+    """GPT를 활용하여 가장 중요한 단어/표현 2개를 선택"""
+    prompt = "From the following words and expressions, select the two most essential and frequently used ones:\n\n"
+    prompt += "\n".join(terms)
+    prompt += "\n\nReturn only the two selected expressions in a comma-separated format."
+
+    selected_terms = request_with_retry(prompt, model="gpt-3.5-turbo")
+    return selected_terms.split(", ")  # 중요 단어 2개 반환
+
+def generate_quiz(phrase):
+    """GPT를 활용해 빈칸 채우기 퀴즈 생성"""
+    prompt = f"Create a fill-in-the-blank quiz using the phrase '{phrase}'. The sentence should be natural and have a missing word for the learner to guess."
+    return request_with_retry(prompt, model="gpt-3.5-turbo")
+
+def generate_conversation(phrase):
+    """GPT를 활용해 해당 표현을 포함한 짧은 대화 예제 생성"""
+    prompt = f"Create a short dialogue using the phrase '{phrase}' in a natural conversation."
+    return request_with_retry(prompt, model="gpt-3.5-turbo")
+
 # 실행
 news_title, news_content = get_latest_news()
 summary_sentence = summarize_news(news_content)
 summary_sentence_ko = translate_text(summary_sentence, target_language="ko")
-important_terms = extract_keywords(summary_sentence)  # 단어 + 표현 포함
-expressions = generate_expressions().split("\n")  # 새로운 표현 추가
-all_terms = important_terms + expressions  # 전체 학습 대상
+important_terms = extract_keywords(summary_sentence)  # 핵심 단어 & 표현 추출
+expressions = generate_expressions().split("\n")  # 추가적인 영어 표현 생성
+all_terms = important_terms + expressions  # 전체 학습 대상 리스트
+
+# 📌 가장 중요한 단어 & 표현 2개 선정
+selected_morning_phrase, selected_afternoon_phrase = select_important_terms(all_terms)
 
 # 한국어 번역 포함한 정의 생성
 term_definitions = define_terms(all_terms)
 
-# 🟢 메시지 생성 (완전 한글화, 개행 문자 문제 해결)
-full_message = (
-    "📚 *오늘의 영어 학습*\n\n"
-    "📰 *오늘의 뉴스 헤드라인:*\n"
-    + news_title + "\n📌 " + translate_text(news_title, target_language="ko") + "\n\n"
-    "💡 *오늘의 핵심 문장:*\n"
-    + summary_sentence + "\n📌 " + summary_sentence_ko + "\n\n"
-    "🔎 *오늘의 단어 및 표현:*\n" + term_definitions + "\n\n"
-    "---\n\n"
-    "🌅 *아침 학습 표현:* " + all_terms[0] + "\n"
-    "📝 *설명:* " + term_definitions.split("\n")[0] + "\n"
-    "✏️ *이 표현을 사용하여 예문을 만들어 보세요!*\n\n"
-    "---\n\n"
-    "🌇 *오후 학습 표현:* " + all_terms[1] + "\n"
-    "📝 *설명:* " + term_definitions.split("\n")[1] + "\n"
-    "📝 *이 표현을 활용하여 짧은 글을 작성해 보세요!*\n\n"
-    "---\n\n"
-    "🌙 *저녁 복습 시간*\n"
-    "💬 *오늘 배운 핵심 문장:* " + summary_sentence + "\n"
-    "📌 " + summary_sentence_ko + "\n"
-    "📖 *오늘 배운 표현:*\n"
-    "- " + all_terms[0] + "\n"
-    "- " + all_terms[1] + "\n"
-    "- " + all_terms[2] + "\n"
-    "✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*"
-)
+# 아침 학습 (빈칸 채우기 퀴즈) & 오후 학습 (대화 예문) 추가
+morning_quiz = generate_quiz(selected_morning_phrase)
+afternoon_conversation = generate_conversation(selected_afternoon_phrase)
 
-# Telegram 메시지 전송 (한 번에 전체 메시지 발송)
-send_telegram_message(full_message)
+# Telegram 메시지 전송
+send_telegram_message(f"""
+📚 *오늘의 영어 학습*
+
+📰 *오늘의 뉴스 헤드라인:*
+{news_title}
+📌 {translate_text(news_title, target_language="ko")}
+
+💡 *오늘의 핵심 문장:*
+{summary_sentence}
+📌 {summary_sentence_ko}
+
+🔎 *오늘의 단어 및 표현:*
+{term_definitions}
+
+---
+
+🌅 *아침 학습 표현:* {selected_morning_phrase}
+📝 *설명:* {term_definitions.split("\n")[all_terms.index(selected_morning_phrase)]}
+❓ *빈칸 채우기 퀴즈:*
+{morning_quiz}
+✏️ *빈칸에 알맞은 단어를 채워보세요!*
+
+---
+
+🌇 *오후 학습 표현:* {selected_afternoon_phrase}
+📝 *설명:* {term_definitions.split("\n")[all_terms.index(selected_afternoon_phrase)]}
+💬 *대화 속에서 배우기:*
+{afternoon_conversation}
+📝 *이 표현을 포함한 자신만의 대화를 만들어보세요!*
+
+---
+
+🌙 *저녁 복습 시간*
+💬 *오늘 배운 핵심 문장:* {summary_sentence}
+📌 {summary_sentence_ko}
+📖 *오늘 배운 표현:*
+- {selected_morning_phrase}
+- {selected_afternoon_phrase}
+✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*
+""")
