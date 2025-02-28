@@ -21,7 +21,7 @@ def request_with_retry(prompt, model="gpt-3.5-turbo", retries=5, delay=10):
             )
             return response.choices[0].message.content.strip()
         except openai.RateLimitError:
-            print(f"⚠️ API Rate Limit Error. {delay}초 후 재시도 ({i+1}/{retries})...")
+            print(f"⚠️ API 요청 제한. {delay}초 후 다시 시도 ({i+1}/{retries})...")
             time.sleep(delay)  # 재시도 전 대기
     raise Exception("🚨 API 요청 실패: Rate Limit 초과")
 
@@ -91,42 +91,43 @@ all_terms = important_terms + expressions  # 전체 학습 대상
 # 한국어 번역 포함한 정의 생성
 term_definitions = define_terms(all_terms)
 
-# 🟢 메시지 생성 (헤드라인: 영어 & 한국어 포함)
+# 🟢 메시지 생성 (완전 한글화)
 full_message = f"""
-📖 *Today's English Learning*
+📚 *오늘의 영어 학습*  
 
-📰 *Headline:*  
+📰 *오늘의 뉴스 헤드라인:*  
 {news_title}  
 📌 {translate_text(news_title, target_language="ko")}
 
-💬 *Key Sentence:*  
+💡 *오늘의 핵심 문장:*  
 {summary_sentence}  
 📌 {summary_sentence_ko}
 
-🔹 *Vocabulary & Expressions:*
+🔎 *오늘의 단어 및 표현:*  
 {term_definitions}
 
 ---
 
-🔹 *Morning Phrase:* {all_terms[0]}
-📝 *Definition:* {term_definitions.split('\\n')[0]}
-💡 Try using this phrase in a sentence today!
+🌅 *아침 학습 표현:* {all_terms[0]}
+📝 *설명:* {term_definitions.split('\\n')[0]}
+✏️ *이 표현을 사용하여 예문을 만들어 보세요!*
 
 ---
 
-🔹 *Afternoon Phrase:* {all_terms[1]}
-📝 *Definition:* {term_definitions.split('\\n')[1]}
-💡 Challenge: Use this phrase in a short paragraph!
+🌇 *오후 학습 표현:* {all_terms[1]}
+📝 *설명:* {term_definitions.split('\\n')[1]}
+📝 *이 표현을 활용하여 짧은 글을 작성해 보세요!*
 
 ---
 
-📚 *Evening Review*
-📰 *Today's Key Sentence:* {summary_sentence}
-🔹 *Expressions & Words Learned Today:*
-- {all_terms[0]}
-- {all_terms[1]}
-- {all_terms[2]}
-✅ Try making your own sentences with these!
+🌙 *저녁 복습 시간*  
+💬 *오늘 배운 핵심 문장:* {summary_sentence}  
+📌 {summary_sentence_ko}  
+📖 *오늘 배운 표현:*  
+- {all_terms[0]}  
+- {all_terms[1]}  
+- {all_terms[2]}  
+✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*
 """
 
 # Telegram 메시지 전송 (한 번에 전체 메시지 발송)
