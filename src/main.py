@@ -54,12 +54,12 @@ def extract_core_sentences(content):
 def summarize_news(content):
     """뉴스 핵심 문장만 GPT에 전달하여 요약 (토큰 절약)"""
     compressed_content = extract_core_sentences(content)  # 텍스트 압축
-    prompt = f"Summarize the following key sentences in one concise sentence:\\n\\n{compressed_content}"
+    prompt = "Summarize the following key sentences in one concise sentence:\n\n" + compressed_content
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def translate_text(text, target_language="ko"):
     """GPT를 사용해 텍스트 번역"""
-    prompt = f"Translate the following text to {target_language}:\\n\\n{text}"
+    prompt = "Translate the following text to " + target_language + ":\n\n" + text
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def extract_keywords(sentence):
@@ -75,9 +75,9 @@ def generate_expressions():
 
 def define_terms(terms):
     """3개의 단어 또는 표현을 한 번의 요청으로 정의 (영어 설명 + 한국어 번역)"""
-    prompt = f"Explain the following words or expressions in English and translate their meaning into Korean:\\n\\n"
+    prompt = "Explain the following words or expressions in English and translate their meaning into Korean:\n\n"
     for term in terms:
-        prompt += f"- {term}\\n"
+        prompt += "- " + term + "\n"
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 # 실행
@@ -85,50 +85,38 @@ news_title, news_content = get_latest_news()
 summary_sentence = summarize_news(news_content)
 summary_sentence_ko = translate_text(summary_sentence, target_language="ko")
 important_terms = extract_keywords(summary_sentence)  # 단어 + 표현 포함
-expressions = generate_expressions().split("\\n")  # 새로운 표현 추가
+expressions = generate_expressions().split("\n")  # 새로운 표현 추가
 all_terms = important_terms + expressions  # 전체 학습 대상
 
 # 한국어 번역 포함한 정의 생성
 term_definitions = define_terms(all_terms)
 
-# 🟢 메시지 생성 (완전 한글화)
-full_message = f"""
-📚 *오늘의 영어 학습*  
-
-📰 *오늘의 뉴스 헤드라인:*  
-{news_title}  
-📌 {translate_text(news_title, target_language="ko")}
-
-💡 *오늘의 핵심 문장:*  
-{summary_sentence}  
-📌 {summary_sentence_ko}
-
-🔎 *오늘의 단어 및 표현:*  
-{term_definitions}
-
----
-
-🌅 *아침 학습 표현:* {all_terms[0]}
-📝 *설명:* {term_definitions.split('\\n')[0]}
-✏️ *이 표현을 사용하여 예문을 만들어 보세요!*
-
----
-
-🌇 *오후 학습 표현:* {all_terms[1]}
-📝 *설명:* {term_definitions.split('\\n')[1]}
-📝 *이 표현을 활용하여 짧은 글을 작성해 보세요!*
-
----
-
-🌙 *저녁 복습 시간*  
-💬 *오늘 배운 핵심 문장:* {summary_sentence}  
-📌 {summary_sentence_ko}  
-📖 *오늘 배운 표현:*  
-- {all_terms[0]}  
-- {all_terms[1]}  
-- {all_terms[2]}  
-✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*
-"""
+# 🟢 메시지 생성 (완전 한글화, 개행 문자 문제 해결)
+full_message = (
+    "📚 *오늘의 영어 학습*\n\n"
+    "📰 *오늘의 뉴스 헤드라인:*\n"
+    + news_title + "\n📌 " + translate_text(news_title, target_language="ko") + "\n\n"
+    "💡 *오늘의 핵심 문장:*\n"
+    + summary_sentence + "\n📌 " + summary_sentence_ko + "\n\n"
+    "🔎 *오늘의 단어 및 표현:*\n" + term_definitions + "\n\n"
+    "---\n\n"
+    "🌅 *아침 학습 표현:* " + all_terms[0] + "\n"
+    "📝 *설명:* " + term_definitions.split("\n")[0] + "\n"
+    "✏️ *이 표현을 사용하여 예문을 만들어 보세요!*\n\n"
+    "---\n\n"
+    "🌇 *오후 학습 표현:* " + all_terms[1] + "\n"
+    "📝 *설명:* " + term_definitions.split("\n")[1] + "\n"
+    "📝 *이 표현을 활용하여 짧은 글을 작성해 보세요!*\n\n"
+    "---\n\n"
+    "🌙 *저녁 복습 시간*\n"
+    "💬 *오늘 배운 핵심 문장:* " + summary_sentence + "\n"
+    "📌 " + summary_sentence_ko + "\n"
+    "📖 *오늘 배운 표현:*\n"
+    "- " + all_terms[0] + "\n"
+    "- " + all_terms[1] + "\n"
+    "- " + all_terms[2] + "\n"
+    "✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*"
+)
 
 # Telegram 메시지 전송 (한 번에 전체 메시지 발송)
 send_telegram_message(full_message)
