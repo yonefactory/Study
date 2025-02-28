@@ -118,43 +118,34 @@ morning_quiz = generate_quiz(selected_morning_phrase)
 afternoon_conversation = generate_conversation(selected_afternoon_phrase)
 
 # Telegram 메시지 전송
-send_telegram_message(f"""
-📚 *오늘의 영어 학습*
+full_message = (
+    "📚 *오늘의 영어 학습*\n\n"
+    "📰 *오늘의 뉴스 헤드라인:*\n"
+    + news_title + "\n📌 " + translate_text(news_title, target_language="ko") + "\n\n"
+    "💡 *오늘의 핵심 문장:*\n"
+    + summary_sentence + "\n📌 " + summary_sentence_ko + "\n\n"
+    "🔎 *오늘의 단어 및 표현:*\n" + term_definitions + "\n\n"
+    "---\n\n"
+    
+    "🌅 *아침 학습 표현:* " + selected_morning_phrase + "\n"
+    "📝 *설명:* " + term_definitions.split("\n")[all_terms.index(selected_morning_phrase)] + "\n"
+    "❓ *빈칸 채우기 퀴즈:*\n" + morning_quiz + "\n"
+    "✏️ *빈칸에 알맞은 단어를 채워보세요!*\n\n"
+    "---\n\n"
+    
+    "🌇 *오후 학습 표현:* " + selected_afternoon_phrase + "\n"
+    "📝 *설명:* " + term_definitions.split("\n")[all_terms.index(selected_afternoon_phrase)] + "\n"
+    "💬 *대화 속에서 배우기:*\n" + afternoon_conversation + "\n"
+    "📝 *이 표현을 포함한 자신만의 대화를 만들어보세요!*\n\n"
+    "---\n\n"
+    
+    "🌙 *저녁 복습 시간*\n"
+    "💬 *오늘 배운 핵심 문장:* " + summary_sentence + "\n"
+    "📌 " + summary_sentence_ko + "\n"
+    "📖 *오늘 배운 표현:*\n"
+    "- " + selected_morning_phrase + "\n"
+    "- " + selected_afternoon_phrase + "\n"
+    "✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*"
+)
 
-📰 *오늘의 뉴스 헤드라인:*
-{news_title}
-📌 {translate_text(news_title, target_language="ko")}
-
-💡 *오늘의 핵심 문장:*
-{summary_sentence}
-📌 {summary_sentence_ko}
-
-🔎 *오늘의 단어 및 표현:*
-{term_definitions}
-
----
-
-🌅 *아침 학습 표현:* {selected_morning_phrase}
-📝 *설명:* {term_definitions.split("\n")[all_terms.index(selected_morning_phrase)]}
-❓ *빈칸 채우기 퀴즈:*
-{morning_quiz}
-✏️ *빈칸에 알맞은 단어를 채워보세요!*
-
----
-
-🌇 *오후 학습 표현:* {selected_afternoon_phrase}
-📝 *설명:* {term_definitions.split("\n")[all_terms.index(selected_afternoon_phrase)]}
-💬 *대화 속에서 배우기:*
-{afternoon_conversation}
-📝 *이 표현을 포함한 자신만의 대화를 만들어보세요!*
-
----
-
-🌙 *저녁 복습 시간*
-💬 *오늘 배운 핵심 문장:* {summary_sentence}
-📌 {summary_sentence_ko}
-📖 *오늘 배운 표현:*
-- {selected_morning_phrase}
-- {selected_afternoon_phrase}
-✅ *오늘 배운 표현을 활용하여 문장을 만들어 보세요!*
-""")
+send_telegram_message(full_message)
