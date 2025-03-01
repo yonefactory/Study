@@ -1,0 +1,51 @@
+name: Daily English Study Scheduler
+
+on:
+  schedule:
+    - cron: '0 22 * * *'  # 한국 시간 7AM (GitHub Actions는 UTC 기준, 한국은 +9시간)
+    - cron: '0 2 * * *'   # 한국 시간 11AM
+    - cron: '0 7 * * *'   # 한국 시간 4PM
+    - cron: '0 10 * * *'  # 한국 시간 7PM
+
+  workflow_dispatch:  # 수동 실행 가능하도록 설정
+
+jobs:
+  send_message:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Determine Task
+        run: |
+          # GitHub Actions가 실행된 시간을 기반으로 task 결정
+          CURRENT_HOUR=$(date -u +"%H")
+          if [ "$CURRENT_HOUR" -eq "22" ]; then
+            TASK="morning_learning"
+          elif [ "$CURRENT_HOUR" -eq "2" ]; then
+            TASK="morning_study"
+          elif [ "$CURRENT_HOUR" -eq "7" ]; then
+            TASK="afternoon_study"
+          elif [ "$CURRENT_HOUR" -eq "10" ]; then
+            TASK="evening_review"
+          else
+            echo "Invalid time for task execution."
+            exit 1
+          fi
+          echo "TASK=$TASK" >> $GITHUB_ENV
+
+      - name: Run Scheduled Task
+        run: python3 daily_study.py $TASK
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
