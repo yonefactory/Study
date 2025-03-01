@@ -2,12 +2,12 @@ name: Daily English Study Scheduler
 
 on:
   schedule:
-    - cron: '0 22 * * *'  # 한국 시간 7AM (GitHub Actions는 UTC 기준, 한국은 +9시간)
-    - cron: '0 2 * * *'   # 한국 시간 11AM
-    - cron: '0 7 * * *'   # 한국 시간 4PM
-    - cron: '0 10 * * *'  # 한국 시간 7PM
+    - cron: '0 22 * * *'  # 한국 시간 7AM (UTC 기준 22시)
+    - cron: '0 2 * * *'   # 한국 시간 11AM (UTC 기준 2시)
+    - cron: '0 7 * * *'   # 한국 시간 4PM (UTC 기준 7시)
+    - cron: '0 10 * * *'  # 한국 시간 7PM (UTC 기준 10시)
 
-  workflow_dispatch:  # 수동 실행 가능하도록 설정
+  workflow_dispatch:
 
 jobs:
   send_message:
@@ -17,21 +17,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Set working directory
+        run: echo "Working directory: $(pwd)"
+
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: "3.10"
 
       - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Determine Task
         run: |
+          set -e
           CURRENT_HOUR=$(date -u +"%H")
           echo "CURRENT_HOUR is $CURRENT_HOUR"
 
-          TASK="default"
           if [ "$CURRENT_HOUR" -eq "22" ]; then
             TASK="morning_learning"
           elif [ "$CURRENT_HOUR" -eq "2" ]; then
@@ -40,13 +42,16 @@ jobs:
             TASK="afternoon_study"
           elif [ "$CURRENT_HOUR" -eq "10" ]; then
             TASK="evening_review"
+          else
+            echo "Invalid time for task execution."
+            exit 1
           fi
-
           echo "TASK=$TASK" >> $GITHUB_ENV
 
       - name: Run Scheduled Task
-        run: python3 ./src/daily_study.py
+        run: python3 src/daily_study.py
         env:
           TASK: ${{ env.TASK }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
