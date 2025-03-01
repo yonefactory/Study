@@ -28,7 +28,6 @@ jobs:
 
       - name: Determine Task
         run: |
-          # GitHub Actions가 실행된 시간을 기반으로 task 결정
           CURRENT_HOUR=$(date -u +"%H")
           if [ "$CURRENT_HOUR" -eq "22" ]; then
             TASK="morning_learning"
@@ -39,13 +38,13 @@ jobs:
           elif [ "$CURRENT_HOUR" -eq "10" ]; then
             TASK="evening_review"
           else
-            echo "Invalid time for task execution."
             exit 1
           fi
           echo "TASK=$TASK" >> $GITHUB_ENV
 
       - name: Run Scheduled Task
-        run: python3 daily_study.py $TASK
+        run: python3 daily_study.py
         env:
+          TASK: ${{ env.TASK }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
