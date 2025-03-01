@@ -45,7 +45,7 @@ jobs:
           echo "TASK=$TASK" >> $GITHUB_ENV
 
       - name: Run Scheduled Task
-        run: python3 daily_study.py
+        run: python3 ./src/daily_study.py
         env:
           TASK: ${{ env.TASK }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
