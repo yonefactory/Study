@@ -74,8 +74,8 @@ def generate_expressions():
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def define_terms(terms):
-    """3개의 단어 또는 표현을 한 번의 요청으로 정의 (영어 설명 + 한국어 번역)"""
-    prompt = "Explain the following words or expressions in English and translate their meaning into Korean:\n\n"
+    """단어 및 표현의 영어 설명 + 한국어 의미 제공"""
+    prompt = "Provide explanations and Korean meanings for the following words and expressions:\n\n"
     for term in terms:
         prompt += "- " + term + "\n"
     return request_with_retry(prompt, model="gpt-3.5-turbo")
@@ -89,9 +89,9 @@ def select_important_terms(terms):
     selected_terms = request_with_retry(prompt, model="gpt-3.5-turbo")
     return selected_terms.split(", ")
 
-def generate_quiz(phrase):
-    """GPT를 활용해 빈칸 채우기 퀴즈 생성"""
-    prompt = f"Create a fill-in-the-blank quiz using the phrase '{phrase}'."
+def generate_example_sentence(phrase):
+    """GPT를 활용해 해당 표현이 포함된 예문 생성"""
+    prompt = f"Create a short example sentence using the phrase '{phrase}'."
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def generate_conversation(phrase):
@@ -117,7 +117,7 @@ if selected_afternoon_phrase not in all_terms:
     selected_afternoon_phrase = all_terms[1]
 
 term_definitions = define_terms(all_terms)
-morning_quiz = generate_quiz(selected_morning_phrase)
+morning_example_sentence = generate_example_sentence(selected_morning_phrase)
 afternoon_conversation = generate_conversation(selected_afternoon_phrase)
 
 # Telegram 메시지 전송
@@ -130,13 +130,11 @@ full_message = (
     "🔎 *오늘의 단어 및 표현:*\n" + term_definitions + "\n\n"
     "---\n\n"
     "🌅 *아침 학습 표현:* " + selected_morning_phrase + "\n"
-    "📝 *설명:* " + term_definitions.split("\n")[all_terms.index(selected_morning_phrase)] + "\n"
-    "❓ *빈칸 채우기 퀴즈:*\n" + morning_quiz + "\n"
-    "✏️ *빈칸에 알맞은 단어를 채워보세요!*\n\n"
+    "💡 *예문:* " + morning_example_sentence + "\n"
+    "✏️ **이 문장을 해석해보세요!**\n\n"
     "---\n\n"
     "🌇 *오후 학습 표현:* " + selected_afternoon_phrase + "\n"
-    "💬 *대화 속에서 배우기:*\n" + afternoon_conversation + "\n"
-    "📝 *이 표현을 포함한 자신만의 대화를 만들어보세요!*\n\n"
+    "💬 *대화 속에서 배우기:*\n" + afternoon_conversation + "\n\n"
     "---\n\n"
     "🌙 *저녁 복습 시간*\n"
     "💬 *오늘 배운 핵심 문장:* " + summary_sentence + "\n"
