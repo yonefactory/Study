@@ -6,8 +6,10 @@ import time
 from telegram_bot import send_telegram_message
 from config import OPENAI_API_KEY, NEWS_URL
 
+# spaCy 모델 로드
 nlp = spacy.load("en_core_web_sm")
 
+# OpenAI API 클라이언트 생성
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def request_with_retry(prompt, model="gpt-3.5-turbo", retries=5, delay=10):
@@ -48,8 +50,8 @@ def get_latest_news():
     article_soup = BeautifulSoup(article_response.text, "html.parser")
     paragraphs = article_soup.find_all("p")
 
-    title = article_soup.find("h1").text if article_soup.find("h1") else None
-    content = " ".join([p.text for p in paragraphs[:5]]) if paragraphs else None
+    title = article_soup.find("h1").text.strip() if article_soup.find("h1") else None
+    content = " ".join([p.text.strip() for p in paragraphs[:5]]) if paragraphs else None
     return title, content, article_url
 
 def translate_text(text, target_language="ko"):
@@ -86,7 +88,7 @@ def fetch_valid_news_data(max_retries=3):
         keywords = extract_keywords(summary_sentence)
 
         if len(keywords) >= 2:
-            return news_title, news_url, summary_sentence, summary_sentence_ko, keywords
+            return news_title.strip(), news_url, summary_sentence.strip(), summary_sentence_ko.strip(), keywords
 
         print(f"⚠️ 유효한 키워드 부족. {attempt+1}/{max_retries}번째 재시도...")
 
@@ -95,22 +97,26 @@ def fetch_valid_news_data(max_retries=3):
 # 실행
 news_title, news_url, summary_sentence, summary_sentence_ko, keywords = fetch_valid_news_data()
 
+# 키워드가 부족할 경우 알림 전송 후 종료
 if len(keywords) < 2:
     send_telegram_message("⚠️ 오늘은 적절한 뉴스 기사를 찾지 못했습니다. 내일 다시 확인해 주세요.")
     exit()
 
+# 키워드 번역
 keyword_text = "\n".join([f"{i+1}. {kw} ({translate_text(kw)})" for i, kw in enumerate(keywords)])
 
+# 키워드를 활용한 대화 생성
 conversations = []
 for kw in keywords:
     conv_en = generate_conversation(kw)
     conv_ko = translate_text(conv_en)
     conversations.append(f"{conv_en}\n📌 {conv_ko}\n")
 
+# 최종 메시지 생성
 full_message = (
     "📚 *오늘의 영어 학습*\n\n"
     "📰 *오늘의 뉴스 헤드라인:*\n"
-    + news_title + "📌 " + translate_text(news_title) +
+    + news_title + "\n📌 " + translate_text(news_title) +
     "\n🔗 " + (news_url if news_url else "링크 없음") + "\n\n"
     "💡 *오늘의 핵심 문장:*\n\n"
     + summary_sentence + "\n"
@@ -143,8 +149,7 @@ full_message = (
     "💭 내일 아침에 다시 확인하면서 복습해 보세요!"
 )
 
+# 메시지 전송
 print("메시지 생성 완료!")
 print(full_message)  # 메시지 내용 확인
-
-
 send_telegram_message(full_message)
