@@ -1,8 +1,5 @@
 import openai
-import os
-
-# OpenAI API 키 가져오기
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+from config import OPENAI_API_KEY
 
 # OpenAI 클라이언트 생성
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
