@@ -60,25 +60,20 @@ def translate_text(text, target_language="ko"):
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def extract_keywords(sentence):
-    """핵심 문장에서 단어 추출"""
+    """핵심 키워드 추출"""
     if not sentence:
         return []
     doc = nlp(sentence)
     keywords = [token.text for token in doc if token.pos_ in ["NOUN", "VERB", "ADJ"] and len(token.text) > 3]
-    return keywords[:3]
-
-def generate_expressions():
-    """GPT를 사용해 표현(숙어, 관용어) 생성"""
-    prompt = "Generate three commonly used English expressions, including idioms or phrasal verbs."
-    return request_with_retry(prompt, model="gpt-3.5-turbo").split("\n")
+    return keywords[:2]  # 최대 2개만 선택
 
 def generate_conversation(phrase):
-    """GPT를 활용해 해당 표현을 포함한 짧은 대화 예제 생성"""
+    """GPT를 활용해 해당 키워드를 포함한 짧은 대화 예제 생성"""
     prompt = f"Create a short dialogue using the phrase '{phrase}'."
     return request_with_retry(prompt, model="gpt-3.5-turbo")
 
 def fetch_valid_news_data(max_retries=3):
-    """최소한 하나 이상의 유효한 데이터(단어/표현)를 확보할 때까지 뉴스 가져오기"""
+    """최소한 2개의 유효한 키워드를 확보할 때까지 뉴스 가져오기"""
     for attempt in range(max_retries):
         news_title, news_content, news_url = get_latest_news()
         if not news_title or not news_content:
@@ -88,60 +83,59 @@ def fetch_valid_news_data(max_retries=3):
         summary_sentence = request_with_retry(f"Summarize this in one sentence:\n{news_content}")
         summary_sentence_ko = translate_text(summary_sentence, target_language="ko")
 
-        important_terms = extract_keywords(summary_sentence)
-        expressions = generate_expressions()
+        keywords = extract_keywords(summary_sentence)
 
-        if important_terms and expressions:
-            return news_title, news_url, summary_sentence, summary_sentence_ko, important_terms, expressions
+        if len(keywords) >= 2:
+            return news_title, news_url, summary_sentence, summary_sentence_ko, keywords
 
-        print(f"⚠️ 유효한 단어 또는 표현이 부족함. {attempt+1}/{max_retries}번째 재시도...")
+        print(f"⚠️ 유효한 키워드 부족. {attempt+1}/{max_retries}번째 재시도...")
 
-    return "No News Available", None, "No Summary Available", "요약할 뉴스 없음", [], []
+    return "No News Available", None, "No Summary Available", "요약할 뉴스 없음", []
 
 # 실행
-news_title, news_url, summary_sentence, summary_sentence_ko, important_terms, expressions = fetch_valid_news_data()
+news_title, news_url, summary_sentence, summary_sentence_ko, keywords = fetch_valid_news_data()
 
-if not important_terms or not expressions:
+if len(keywords) < 2:
     send_telegram_message("⚠️ 오늘은 적절한 뉴스 기사를 찾지 못했습니다. 내일 다시 확인해 주세요.")
     exit()
 
-selected_morning_word = important_terms[0]
-selected_afternoon_expression = expressions[0]
+keyword_1 = keywords[0]
+keyword_2 = keywords[1]
 
-selected_morning_word_ko = translate_text(selected_morning_word)
-selected_afternoon_expression_ko = translate_text(selected_afternoon_expression)
+keyword_1_ko = translate_text(keyword_1)
+keyword_2_ko = translate_text(keyword_2)
 
-morning_conversation = generate_conversation(selected_morning_word)
-morning_conversation_ko = translate_text(morning_conversation)
+conversation_1 = generate_conversation(keyword_1)
+conversation_1_ko = translate_text(conversation_1)
 
-afternoon_conversation = generate_conversation(selected_afternoon_expression)
-afternoon_conversation_ko = translate_text(afternoon_conversation)
+conversation_2 = generate_conversation(keyword_2)
+conversation_2_ko = translate_text(conversation_2)
 
 full_message = (
     "📚 *오늘의 영어 학습*\n\n"
     "📰 *오늘의 뉴스 헤드라인:*\n"
     + news_title + "\n🔗 " + (news_url if news_url else "링크 없음") + "\n📌 " + translate_text(news_title) + "\n\n"
     "💡 *오늘의 핵심 문장:* " + summary_sentence + "\n📌 " + summary_sentence_ko + "\n\n"
-    "🔎 *오늘의 단어 및 표현:* \n"
-    "- " + selected_morning_word + " (" + selected_morning_word_ko + ")\n"
-    "- " + selected_afternoon_expression + " (" + selected_afternoon_expression_ko + ")\n\n"
+    "🔎 *오늘의 키워드*\n"
+    "- " + keyword_1 + " (" + keyword_1_ko + ")\n"
+    "- " + keyword_2 + " (" + keyword_2_ko + ")\n\n"
     "---\n\n"
-    "🌅 *아침 학습*\n"
+    "🌅 *오늘의 키워드 #1*\n"
     "💬 *대화 속에서 배우기*\n"
-    + morning_conversation + "\n📌 " + morning_conversation_ko + "\n\n"
+    "A: " + conversation_1 + "\n"
+    "A: " + conversation_1_ko + "\n\n"
     "---\n\n"
-    "🌇 *오후 학습*\n"
+    "🌇 *오늘의 키워드 #2*\n"
     "💬 *대화 속에서 배우기*\n"
-    + afternoon_conversation + "\n📌 " + afternoon_conversation_ko + "\n\n"
+    "B: " + conversation_2 + "\n"
+    "B: " + conversation_2_ko + "\n\n"
     "---\n\n"
     "🌙 *저녁 복습 시간*\n"
     "📖 오늘 배운 내용을 정리해 보세요!\n"
-    "✅ 오늘 배운 표현을 활용한 예제 문장\n"
-    "- " + selected_morning_word + ": (영어 문장 만들기)\n"
-    "- " + selected_afternoon_expression + ": (영어 문장 만들기)\n"
+    "✅ 오늘 배운 키워드를 활용한 예제 문장\n"
+    "- " + keyword_1 + ": (영어 문장 만들기)\n"
+    "- " + keyword_2 + ": (영어 문장 만들기)\n"
     "✏️ 직접 문장을 만들어 보세요!\n"
-    "1. " + selected_morning_word + "을 사용하여 문장을 만들어 보세요.\n"
-    "2. " + selected_afternoon_expression + "을 활용하여 새로운 문장을 작성해 보세요.\n"
     "💭 내일 아침에 다시 확인하면서 복습해 보세요!"
 )
 
