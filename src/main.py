@@ -52,6 +52,11 @@ def get_latest_news():
     content = " ".join([p.text for p in paragraphs[:5]]) if paragraphs else "No Content Found"
     return title, content
 
+def translate_text(text, target_language="ko"):
+    """GPT를 사용해 텍스트 번역"""
+    prompt = f"Translate the following text to {target_language}:\n\n{text}"
+    return request_with_retry(prompt, model="gpt-3.5-turbo")
+
 def extract_keywords(sentence):
     """핵심 문장에서 단어 추출"""
     doc = nlp(sentence)
