@@ -143,4 +143,8 @@ full_message = (
     "💭 내일 아침에 다시 확인하면서 복습해 보세요!"
 )
 
+print("메시지 생성 완료!")
+print(full_message)  # 메시지 내용 확인
+
+
 send_telegram_message(full_message)
