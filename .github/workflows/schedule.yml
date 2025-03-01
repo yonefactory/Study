@@ -49,7 +49,7 @@ jobs:
           echo "TASK=$TASK" >> $GITHUB_ENV
 
       - name: Run Scheduled Task
-        run: python3 src/daily_study.py
+        run: python3 ./src/daily_study.py
         env:
           TASK: ${{ env.TASK }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
