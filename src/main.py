@@ -110,7 +110,7 @@ for kw in keywords:
 full_message = (
     "📚 *오늘의 영어 학습*\n\n"
     "📰 *오늘의 뉴스 헤드라인:*\n"
-    + news_title + "\n📌 " + translate_text(news_title) +
+    + news_title + "📌 " + translate_text(news_title) +
     "\n🔗 " + (news_url if news_url else "링크 없음") + "\n\n"
     "💡 *오늘의 핵심 문장:*\n\n"
     + summary_sentence + "\n"
