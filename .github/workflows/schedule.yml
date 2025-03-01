@@ -29,6 +29,9 @@ jobs:
       - name: Determine Task
         run: |
           CURRENT_HOUR=$(date -u +"%H")
+          echo "CURRENT_HOUR is $CURRENT_HOUR"
+
+          TASK="default"
           if [ "$CURRENT_HOUR" -eq "22" ]; then
             TASK="morning_learning"
           elif [ "$CURRENT_HOUR" -eq "2" ]; then
@@ -37,9 +40,8 @@ jobs:
             TASK="afternoon_study"
           elif [ "$CURRENT_HOUR" -eq "10" ]; then
             TASK="evening_review"
-          else
-            exit 1
           fi
+
           echo "TASK=$TASK" >> $GITHUB_ENV
 
       - name: Run Scheduled Task
