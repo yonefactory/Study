@@ -1,8 +1,5 @@
 import openai
-import os
-
-# OpenAI API 키 가져오기
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+from config import OPENAI_API_KEY
 
 # OpenAI 클라이언트 생성
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -13,7 +10,7 @@ def translate_text(text, target_language="ko"):
         return "번역할 내용 없음"
 
     prompt = f"Translate the following text to {target_language}:\n\n{text}"
-    
+
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
