@@ -1,4 +1,5 @@
 import sys
+import os
 from news_processor import fetch_valid_news_data
 from telegram_bot import send_telegram_message
 from translation import translate_text
@@ -82,20 +83,17 @@ def send_evening_review():
     send_telegram_message(message)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("사용법: python3 daily_study.py <옵션>")
-        sys.exit(1)
+    """GitHub Actions가 실행하는 스케줄에 맞춰 자동으로 실행"""
+    task = os.getenv("TASK")  # GitHub Actions에서 설정한 TASK 값 사용
 
-    option = sys.argv[1]
-
-    if option == "morning_learning":
+    if task == "morning_learning":
         send_morning_learning()
-    elif option == "morning_study":
+    elif task == "morning_study":
         send_morning_study()
-    elif option == "afternoon_study":
+    elif task == "afternoon_study":
         send_afternoon_study()
-    elif option == "evening_review":
+    elif task == "evening_review":
         send_evening_review()
     else:
-        print("잘못된 옵션입니다.")
+        print("🚨 실행할 작업이 없습니다.")
         sys.exit(1)
